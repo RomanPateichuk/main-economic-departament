@@ -11,10 +11,14 @@ export const AppRoutes = () => {
       {
         path: '/card/:id',
         element: <Card/>,
-      }
+      },
+        {
+          path: '/create',
+          element: <Card mode={"create"}/>,
+        }
+
   ]
-)
-;
+);
 return element
 }
 

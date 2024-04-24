@@ -5,24 +5,45 @@ import dayjs from "dayjs";
 import {AdapterDayjs} from '@mui/x-date-pickers/AdapterDayjs'
 import {Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField} from "@mui/material"
 import {DatePicker, LocalizationProvider} from "@mui/x-date-pickers";
-import {f_pers_young_spec_line, nsi_pers_young_spec} from "../../data.tsx"
 import {ruRU} from '@mui/x-date-pickers/locales';
 import {useFormik} from "formik"
 import {useLocation, useNavigate} from "react-router-dom"
 import styles from "./Card.module.scss"
+import {useGetLinesDataQuery, useGetLinesQuery} from "../../redux";
+import {Loader} from "../Loader/Loader.tsx";
 
-export const Card: React.FC = () => {
+type calculatedDataType = {
+  actual_date: string
+  distribution_count: number
+  f_pers_young_spec_line_id: number
+  name: string
+  nsi_pers_indicate_id: number
+  nsi_pers_young_spec_id: number
+  range: number
+  target_count: number
+  update_date: string
+  update_user: string
+}
+
+type IndexedCalculatedDataType = calculatedDataType & {
+  [key: string]: any;
+};
+
+type PropType = {
+  mode: 'show' | 'create' | 'edit'
+}
+
+export const Card: React.FC<PropType> = React.memo(({mode='show'}) => {
   const ruLocale = ruRU.components.MuiLocalizationProvider.defaultProps.localeText;
   const navigate = useNavigate()
 
-  // передавать через пропс create | edit | show = ""
-  const [mode, setMode] = useState('show')
-  // отдает api
-  const [data, setData] = useState(f_pers_young_spec_line)
-  const [row, setRow] = useState(nsi_pers_young_spec)
-  // соотносим поля и данные
-  const [resultData, setResultData] = useState<any>()
+  const linesData = []
+  const linesDataLoading = false
 
+  //const {data: linesData = [], isLoading: linesDataLoading} = useGetLinesDataQuery()
+
+  const {data: lines = [], isLoading: linesLoading} = useGetLinesQuery()
+  const [calculatedData, setCalculatedData] = useState<Array<calculatedDataType> | []>([])
   const location = useLocation()
 
   const columns = [
@@ -33,28 +54,68 @@ export const Card: React.FC = () => {
   ]
 
   const findCellData = (id: number) => {
-    const findData = data.filter((item) => item.f_pers_young_spec_id === id)
+    const findData = linesData.filter((item) => item.f_pers_young_spec_id === id)
     const rowData = findData.map((data) => {
-      const id = data.f_pers_young_spec_line_id
-      const result = row.find(field => field.nsi_pers_young_spec_id === id)
+      const id = data.nsi_pers_indicate_id
+      const result = lines.find(field => field.nsi_pers_young_spec_id === id)
+
+
       return {...data, ...result}
     })
 
-    setResultData(rowData)
+
+    const uniqueNames: Record<string, typeof rowData[0]> = {}
+    rowData.forEach((obj) => {
+      if (obj.name) {
+        if (!uniqueNames[obj.name] || new Date(uniqueNames[obj.name].update_date) < new Date(obj.update_date)) {
+          uniqueNames[obj.name] = obj;
+        }
+      }
+    });
+    const filteredData = Object.values(uniqueNames);
+    // console.log(filteredData)
+    // console.log(lines)
+
+    const result = Object.entries(lines).map(([, value]) => {
+      const line = filteredData.find(obj => obj.name === value.name);
+
+      console.log(line)
+
+      if (!line) {
+        return {
+          f_pers_young_spec_line_id: Date.now() + value.range,
+          "target_count": 0,
+          "distribution_count": 0,
+          "update_date": "",
+          "update_user": "",
+          "nsi_pers_indicate_id": value?.nsi_pers_young_spec_id,
+          "f_pers_young_spec_id": filteredData[0]?.f_pers_young_spec_id,
+          "nsi_pers_young_spec_id": 3,
+          "actual_date": "",
+          "name": value.name,
+          "range": value.range
+        };
+      }
+      return line;
+    });
+
+    console.log(result);
+
+
+    setCalculatedData(result as Array<calculatedDataType>)
   }
 
   useEffect(() => {
     findCellData(location.state.id)
-  }, []);
+  }, [linesDataLoading, linesLoading]);
 
   const getTotal = (key: string, param: string = '') => {
-    if(param){
-      return resultData.reduce((total: number, item) => total + item[key] + item[param], 0);
+    if (param) {
+      return calculatedData.reduce((total: number, item: IndexedCalculatedDataType) => total + item[key] + item[param], 0);
+    } else {
+      return calculatedData.reduce((total: number, item: IndexedCalculatedDataType) => total + item[key], 0);
     }
-    else {
-      return resultData.reduce((total: number, item) => total + item[key], 0);
-    }
-    };
+  };
 
   const validationSchema = yup.object({
     email: yup
@@ -81,8 +142,8 @@ export const Card: React.FC = () => {
     },
   });
 
-  const onclickButtonHandler = ()=>{
-    switch (mode){
+  const onclickButtonHandler = () => {
+    switch (mode) {
       case 'edit':
         console.log("edit")
         break
@@ -99,138 +160,139 @@ export const Card: React.FC = () => {
 
 
   return (
-    <form className={styles.form} onSubmit={formik.handleSubmit}>
-      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru" localeText={ruLocale}>
+    <>
+      {linesDataLoading ? <Loader/> :
+        <form className={styles.form} onSubmit={formik.handleSubmit}>
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru" localeText={ruLocale}>
 
-        <div className={styles.dateBlock}>
-          <span>За период</span>
-          <DatePicker
-            name="periodBegin"
-            onChange={(value) => formik.setFieldValue("periodBegin", value, true)}
-            value={dayjs(formik.values.periodBegin)}
-            format="MMMM"
-            slotProps={{textField: {size: 'small'}}}
+            <div className={styles.dateBlock}>
+              <span>За период</span>
+              <DatePicker
+                name="periodBegin"
+                onChange={(value) => formik.setFieldValue("periodBegin", value, true)}
+                value={dayjs(formik.values.periodBegin)}
+                format="MMMM"
+                slotProps={{textField: {size: 'small'}}}
+                disabled={mode === 'show'}
+              />
+              <span>&mdash;</span>
+              <DatePicker
+                name="periodEnd"
+                onChange={(value) => formik.setFieldValue("periodEnd", value, true)}
+                value={dayjs(formik.values.periodEnd)}
+                format="MMMM"
+                slotProps={{textField: {size: 'small'}}}
+                disabled={mode === 'show'}
+              />
+              <span>{location.state.year}</span>
+            </div>
+
+          </LocalizationProvider>
+
+          <div className={styles.nameLabel}>Ответственный заполнивший форму:</div>
+          <TextField
+            fullWidth
+            size="small"
+            value={formik.values.org_employee}
+            onChange={formik.handleChange}
             disabled={mode === 'show'}
           />
-          <span>&mdash;</span>
-          <DatePicker
-            name="periodEnd"
-            onChange={(value) => formik.setFieldValue("periodEnd", value, true)}
-            value={dayjs(formik.values.periodEnd)}
-            format="MMMM"
-            slotProps={{textField: {size: 'small'}}}
-            disabled={mode === 'show'}
-          />
-          <span>{location.state.year}</span>
-        </div>
-
-      </LocalizationProvider>
-
-      <div className={styles.nameLabel}>Ответственный заполнивший форму:</div>
-        <TextField
-          fullWidth
-          size="small"
-          value={formik.values.org_employee}
-          onChange={formik.handleChange}
-          disabled={mode === 'show'}
-        />
 
 
-      <TableContainer component={Paper} className={styles.table}>
-        <Table >
-          <TableHead>
-            <TableRow>
-              {
-                columns.map(column => <TableCell key={column.id}>{column.value}</TableCell>)
-              }
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {
-              resultData ? resultData.map(row => {
-                  return <TableRow
-                    key={row.f_pers_young_spec_line_id}
-                  >
-                    <TableCell>
-                      {
-                        row.name
-                      }
-                    </TableCell>
-                    <TableCell sx={{fontSize: "1rem"}}>
-                      {
-                        row.target_count + row.distribution_count
-                      }
-                    </TableCell>
-                    <TableCell>
-                      <TextField value={row.target_count}
-                                 name="periodBegin"
-                                 onChange={(value) => formik.setFieldValue("periodBegin", value, true)}
-                                 size={'small'}
-                                 disabled={mode === 'show'}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <TextField value={row.distribution_count}
-                                 size={'small'}
-                                 disabled={mode === 'show'}
-                      />
-                    </TableCell>
-                  </TableRow>
-                }) :
+          <TableContainer component={Paper} className={styles.table}>
+            <Table>
+              <TableHead>
                 <TableRow>
-                  <TableCell>
-                    Данных нет
+                  {
+                    columns.map(column => <TableCell key={column.id}>{column.value}</TableCell>)
+                  }
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {
+                  calculatedData.map(row => {
+                      return <TableRow
+                        key={row.f_pers_young_spec_line_id}
+                      >
+                        <TableCell>
+                          {
+                            row.name
+                          }
+                        </TableCell>
+                        <TableCell sx={{fontSize: "1rem"}}>
+                          {
+                            row.target_count + row.distribution_count
+                          }
+                        </TableCell>
+                        <TableCell>
+                          <TextField value={row.target_count}
+                                     name="periodBegin"
+                                     onChange={(value) => formik.setFieldValue("periodBegin", value, true)}
+                                     size={'small'}
+                                     disabled={mode === 'show' || mode === 'create'}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField value={row.distribution_count}
+                                     size={'small'}
+                                     disabled={mode === 'show' || mode === 'create'}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    })
+                }
+                <TableRow>
+                  <TableCell className={styles.cell}>
+                    Всего
+                  </TableCell>
+                  <TableCell sx={{fontSize: "1rem"}}>
+                    {calculatedData && getTotal('target_count', 'distribution_count')}
+                  </TableCell>
+                  <TableCell sx={{fontSize: "1rem"}}>
+                    {calculatedData && getTotal('target_count')}
+                  </TableCell>
+                  <TableCell sx={{fontSize: "1rem"}}>
+                    {calculatedData && getTotal('distribution_count')}
                   </TableCell>
                 </TableRow>
-            }
-            <TableRow>
-              <TableCell className={styles.cell}>
-                Всего
-              </TableCell>
-              <TableCell sx={{fontSize: "1rem"}}>
-                {resultData && getTotal('target_count', 'distribution_count')}
-              </TableCell>
-              <TableCell sx={{fontSize: "1rem"}}>
-                {resultData && getTotal('target_count')}
-              </TableCell>
-              <TableCell  sx={{fontSize: "1rem"}}>
-               {resultData && getTotal('distribution_count')}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <Button className={styles.button} onClick={()=>{onclickButtonHandler()}} color="primary" variant="outlined" type={(mode==="create" || mode === "edit") ? "submit" : "button"} >
-        {mode === 'show' ? 'закрыть' : mode === 'create' ? 'создать' : 'редактировать'}
-      </Button>
-      <br/>
-      <br/>
-      <div>
-        {/*<div>*/}
-        {/*  <TextField*/}
-        {/*    fullWidth*/}
-        {/*    size="small"*/}
-        {/*    disabled={mode === 'show'}*/}
-        {/*    name="email"*/}
-        {/*    value={formik.values.email}*/}
-        {/*    onChange={formik.handleChange}*/}
-        {/*    onBlur={formik.handleBlur}*/}
-        {/*    error={formik.touched.email && Boolean(formik.errors.email)}*/}
-        {/*    helperText={formik.touched.email && formik.errors.email}*/}
-        {/*  />*/}
-        {/*  <TextField*/}
-        {/*    fullWidth*/}
-        {/*    size="small"*/}
-        {/*    name="password"*/}
-        {/*    value={formik.values.password}*/}
-        {/*    onChange={formik.handleChange}*/}
-        {/*    onBlur={formik.handleBlur}*/}
-        {/*    error={formik.touched.password && Boolean(formik.errors.password)}*/}
-        {/*    helperText={formik.touched.password && formik.errors.password}*/}
-        {/*  />*/}
-        {/*</div>*/}
-      </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <Button className={styles.button} onClick={() => {
+            onclickButtonHandler()
+          }} color="primary" variant="outlined" type={(mode === "create" || mode === "edit") ? "submit" : "button"}>
+            {mode === 'show' ? 'закрыть' : mode === 'create' ? 'создать' : 'редактировать'}
+          </Button>
+          <br/>
+          <br/>
+          <div>
+            {/*<div>*/}
+            {/*  <TextField*/}
+            {/*    fullWidth*/}
+            {/*    size="small"*/}
+            {/*    disabled={mode === 'show'}*/}
+            {/*    name="email"*/}
+            {/*    value={formik.values.email}*/}
+            {/*    onChange={formik.handleChange}*/}
+            {/*    onBlur={formik.handleBlur}*/}
+            {/*    error={formik.touched.email && Boolean(formik.errors.email)}*/}
+            {/*    helperText={formik.touched.email && formik.errors.email}*/}
+            {/*  />*/}
+            {/*  <TextField*/}
+            {/*    fullWidth*/}
+            {/*    size="small"*/}
+            {/*    name="password"*/}
+            {/*    value={formik.values.password}*/}
+            {/*    onChange={formik.handleChange}*/}
+            {/*    onBlur={formik.handleBlur}*/}
+            {/*    error={formik.touched.password && Boolean(formik.errors.password)}*/}
+            {/*    helperText={formik.touched.password && formik.errors.password}*/}
+            {/*  />*/}
+            {/*</div>*/}
+          </div>
 
-    </form>
+        </form>
+      }
+    </>
   )
-}
+})
