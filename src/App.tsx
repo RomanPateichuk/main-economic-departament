@@ -55,6 +55,9 @@ export const App: React.FC = () => {
     navigate(`/card/${selectedRow}`, {state: navigateData})
   }
 
+  const onClickCreateCardHandler = ()=>{
+    navigate("/create" )
+  }
 
   return (
     <>
@@ -75,7 +78,7 @@ export const App: React.FC = () => {
               <IconButton onClick={onClickFilterHandler}>
                 {showFilter ? <FilterListOffIcon/> : <FilterListIcon/>}
               </IconButton>
-              <Button>Добавить</Button>
+              <Button onClick={onClickCreateCardHandler}>Добавить</Button>
               <Button disabled={selectedRow === null} onClick={onClickShowCardHandler}>Просмотреть</Button>
               <Button disabled={selectedRow === null}>Редактировать</Button>
             </ButtonGroup>

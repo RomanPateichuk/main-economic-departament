@@ -1,0 +1,17 @@
+.form {
+  .table{
+    margin: 2rem 0;
+  }
+
+  input {
+    &:disabled {
+      -webkit-text-fill-color: #000000;
+    }
+  }
+
+  .button{
+    display: flex;
+    margin-left: auto;
+    margin-top: 1rem;
+  }
+}

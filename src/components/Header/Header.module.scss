@@ -1,0 +1,29 @@
+.form {
+  .dateBlock {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .MuiFormControl-root {
+      position: relative !important;
+    }
+
+    }
+
+  input {
+    &:disabled {
+      -webkit-text-fill-color: #000000;
+    }
+
+  }
+
+  .button{
+    display: flex;
+    margin-left: auto;
+    margin-top: 1rem;
+  }
+
+  .nameLabel {
+    margin-top: 2rem;
+  }
+}
