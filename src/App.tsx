@@ -31,11 +31,11 @@ export const App: React.FC = () => {
     {id: 2, value: 'Год'},
   ]
 
-  const onClickRowHandler = (id: number, beg_period: string, end_period: string, org_employee: string, year: number) => {
+  const onClickRowHandler = (id: number, rep_beg_period: string, rep_end_period: string, org_employee: string, year: number) => {
     const navigateData = {
       id,
-      beg_period,
-      end_period,
+      rep_beg_period,
+      rep_end_period,
       year,
       org_employee
     }
@@ -59,6 +59,10 @@ export const App: React.FC = () => {
     navigate("/create" )
   }
 
+  const onclickEditHandler = ()=>{
+    navigate(`/edit/${selectedRow}`, {state: navigateData})
+  }
+
   return (
     <>
       {
@@ -80,7 +84,7 @@ export const App: React.FC = () => {
               </IconButton>
               <Button onClick={onClickCreateCardHandler}>Добавить</Button>
               <Button disabled={selectedRow === null} onClick={onClickShowCardHandler}>Просмотреть</Button>
-              <Button disabled={selectedRow === null}>Редактировать</Button>
+              <Button disabled={selectedRow === null} onClick={onclickEditHandler}>Редактировать</Button>
             </ButtonGroup>
             {showFilter && <Input placeholder="Введите значение фильтра" sx={{display: 'block', margin: "1rem"}}/>}
             <Table>

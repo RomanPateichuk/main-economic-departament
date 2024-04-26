@@ -1,6 +1,5 @@
 import React, {useEffect, useState} from "react";
 import {
-  Button,
   Paper,
   Table,
   TableBody,
@@ -13,24 +12,24 @@ import {
 import styles from "./Table.module.scss";
 import {useGetLinesDataQuery, useGetLinesQuery} from "../../redux";
 import {skipToken} from "@reduxjs/toolkit/query/react";
-import {useFormik} from "formik";
-import * as yup from "yup";
-import {useNavigate} from "react-router-dom";
 import {Loader} from "../Loader/Loader.tsx";
 import {calculatedDataType, IndexedCalculatedDataType, PropType} from "./types.ts";
+import {FormikContextType, useFormikContext} from "formik";
+import {IndexedFormValuesType} from "../Card/types.ts";
 
 export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
   const [calculatedData, setCalculatedData] = useState<Array<calculatedDataType> | []>([])
-  const {data: linesData = [], isLoading: linesDataLoading} = useGetLinesDataQuery(mode === 'create' && skipToken)
+  const {data: linesData = [], isLoading: linesDataLoading} = useGetLinesDataQuery(mode === "create" && skipToken)
   const {data: lines = [], isLoading: linesLoading} = useGetLinesQuery()
 
+  const formik: FormikContextType<IndexedFormValuesType> = useFormikContext();
+
   const columns = [
-    {id: 1, value: 'Наименование показателя'},
-    {id: 2, value: 'Общее количество молодых специалистов'},
-    {id: 3, value: 'Целевое'},
-    {id: 4, value: 'Распределение'},
+    {id: 1, value: "Наименование показателя"},
+    {id: 2, value: "Общее количество молодых специалистов"},
+    {id: 3, value: "Целевое"},
+    {id: 4, value: "Распределение"},
   ]
-  const navigate = useNavigate()
 
   const findCellData = (id: number) => {
     const findData = linesData.filter((item) => item.f_pers_young_spec_id === id)
@@ -55,17 +54,17 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
 
       if (!line) {
         return {
-          f_pers_young_spec_line_id: Date.now() + value.range,
-          "target_count": 0,
+          "actual_date": "",
           "distribution_count": 0,
+          "f_pers_young_spec_id": filteredData[0]?.f_pers_young_spec_id,
+          "name": value.name,
+          "nsi_pers_indicate_id": value?.nsi_pers_young_spec_id,
+          "nsi_pers_young_spec_id": 3,
+          "range": value.range,
+          "target_count": 0,
           "update_date": "",
           "update_user": "",
-          "nsi_pers_indicate_id": value?.nsi_pers_young_spec_id,
-          "f_pers_young_spec_id": filteredData[0]?.f_pers_young_spec_id,
-          "nsi_pers_young_spec_id": 3,
-          "actual_date": "",
-          "name": value.name,
-          "range": value.range
+          f_pers_young_spec_line_id: Date.now() + value.range,
         };
       }
       return line;
@@ -79,7 +78,7 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
   }, [linesDataLoading, linesLoading]);
 
 
-  const getTotal = (key: string, param: string = '') => {
+  const getTotal = (key: string, param: string = "") => {
     if (param) {
       return calculatedData.reduce((total: number, item: IndexedCalculatedDataType) => total + item[key] + item[param], 0);
     } else {
@@ -87,38 +86,8 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
     }
   };
 
-  const validationSchema = yup.object({
-
-  });
-
-  const formik = useFormik({
-    initialValues: {
-    },
-    validationSchema: validationSchema,
-    onSubmit: async (values) => {
-      alert(JSON.stringify(values, null, 2));
-    },
-  });
-
-  const onclickButtonHandler = () => {
-    switch (mode) {
-      case 'edit':
-        console.log("edit")
-        break
-      case 'create':
-        console.log("create")
-        break
-      case 'show':
-        navigate('/')
-        break
-      default:
-        return;
-    }
-  }
-
   return <>
         {linesDataLoading ? <Loader/> :
-          <form className={styles.form} onSubmit={formik.handleSubmit}>
             <TableContainer component={Paper} className={styles.table}>
               <Table>
                 <TableHead>
@@ -145,17 +114,20 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
                           }
                         </TableCell>
                         <TableCell>
-                          <TextField value={row.target_count}
-                                     name="periodBegin"
-                                     onChange={(value) => formik.setFieldValue("periodBegin", value, true)}
-                                     size={'small'}
-                                     disabled={mode === 'show'}
+                          {formik.errors.target_1}
+                          <TextField value={formik.values[`target_${row.nsi_pers_indicate_id}`]}
+                                     name={`target_${row.nsi_pers_indicate_id}`}
+                                     onChange={formik.handleChange}
+                                     size={"small"}
+                                     disabled={mode === "show"}
                           />
                         </TableCell>
                         <TableCell>
-                          <TextField value={row.distribution_count}
-                                     size={'small'}
-                                     disabled={mode === 'show'}
+                          <TextField value={formik.values[`distribution_${row.nsi_pers_indicate_id}`]}
+                                     name={`distribution_${row.nsi_pers_indicate_id}`}
+                                     onChange={formik.handleChange}
+                                     size={"small"}
+                                     disabled={mode === "show"}
                           />
                         </TableCell>
                       </TableRow>
@@ -166,24 +138,19 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
                       Всего
                     </TableCell>
                     <TableCell sx={{fontSize: "1rem"}}>
-                      {calculatedData && getTotal('target_count', 'distribution_count')}
+                      {calculatedData && getTotal("target_count", "distribution_count")}
                     </TableCell>
                     <TableCell sx={{fontSize: "1rem"}}>
-                      {calculatedData && getTotal('target_count')}
+                      {calculatedData && getTotal("target_count")}
                     </TableCell>
                     <TableCell sx={{fontSize: "1rem"}}>
-                      {calculatedData && getTotal('distribution_count')}
+                      {calculatedData && getTotal("distribution_count")}
                     </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
-              <Button className={styles.button} onClick={() => {
-                onclickButtonHandler()
-              }} color="primary" variant="outlined" type={(mode === "create" || mode === "edit") ? "submit" : "button"}>
-                {mode === 'show' ? 'закрыть' : mode === 'create' ? 'создать' : 'редактировать'}
-              </Button>
             </TableContainer>
-          </form>}
+        }
       </>
 
 }

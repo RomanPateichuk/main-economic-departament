@@ -6,20 +6,21 @@ import {Card} from "../components/Card";
 export const AppRoutes = () => {
   return useRoutes([
       {
-        path: '/',
+        path: "/",
         element: <App/>,
-        children: [
-
-        ],
       },
       {
-        path: '/card/:id',
+        path: "/card/:id",
         element: <Card/>,
       },
-    {
-      path: "/create",
-      element: <Card mode={'create'}/>,
-    },
+      {
+        path: "/edit/:id",
+        element: <Card mode={"edit"}/>,
+      },
+      {
+        path: "/create",
+        element: <Card mode={"create"}/>,
+      },
     ]
   );
 }

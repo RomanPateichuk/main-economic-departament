@@ -1,5 +1,4 @@
-.form {
-  .dateBlock {
+.dateBlock {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -10,20 +9,13 @@
 
     }
 
-  input {
+input {
     &:disabled {
       -webkit-text-fill-color: #000000;
     }
 
   }
 
-  .button{
-    display: flex;
-    margin-left: auto;
-    margin-top: 1rem;
-  }
-
-  .nameLabel {
+.nameLabel {
     margin-top: 2rem;
   }
-}
