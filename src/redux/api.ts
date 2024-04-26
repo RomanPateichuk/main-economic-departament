@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import {HeaderDataType, LinesDataType, LinesType, requestCardDataType} from "./types.ts";
+import {HeaderDataType, LinesDataType, LinesType, requestCardDataType, requestTableRowType} from "./types.ts";
 
 export const api = createApi({
   reducerPath: 'api',
@@ -21,6 +21,13 @@ export const api = createApi({
         body: requestCardData,
       }),
     }),
+    createTableRow: build.mutation({
+      query: (requestTableRow: requestTableRowType) => ({
+        url: '/f_pers_young_spec_line/',
+        method: 'POST',
+        body: requestTableRow,
+      }),
+    }),
   })
 });
 
@@ -28,5 +35,6 @@ export const {
   useGetHeaderDataQuery,
   useGetLinesDataQuery,
   useGetLinesQuery,
-  useCreateCardMutation
+  useCreateCardMutation,
+  useCreateTableRowMutation,
 } = api;

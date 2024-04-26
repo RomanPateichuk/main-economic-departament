@@ -114,20 +114,29 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
                           }
                         </TableCell>
                         <TableCell>
-                          {formik.errors.target_1}
-                          <TextField value={formik.values[`target_${row.nsi_pers_indicate_id}`]}
-                                     name={`target_${row.nsi_pers_indicate_id}`}
+                          <TextField value={
+                                      mode === "show" || mode === "edit"
+                                       ? row.target_count
+                                       : formik.values[`row_${row.nsi_pers_indicate_id}`]["target_count"]
+                                      }
+                                     name={`row_${row.nsi_pers_indicate_id}.target_count`}
                                      onChange={formik.handleChange}
                                      size={"small"}
                                      disabled={mode === "show"}
+                                     type={"number"}
                           />
                         </TableCell>
                         <TableCell>
-                          <TextField value={formik.values[`distribution_${row.nsi_pers_indicate_id}`]}
-                                     name={`distribution_${row.nsi_pers_indicate_id}`}
+                          <TextField  value={
+                                       mode === "show" || mode === "edit"
+                                         ? row.distribution_count
+                                         : formik.values[`row_${row.nsi_pers_indicate_id}`]["distribution_count"]
+                                     }
+                                     name={`row_${row.nsi_pers_indicate_id}.distribution_count`}
                                      onChange={formik.handleChange}
                                      size={"small"}
                                      disabled={mode === "show"}
+                                     type={"number"}
                           />
                         </TableCell>
                       </TableRow>

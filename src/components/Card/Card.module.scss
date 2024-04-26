@@ -1,5 +1,10 @@
 .form {
+  input {
+    &:disabled {
+      -webkit-text-fill-color: #000000;
+    }
 
+  }
   .button {
     display: flex;
     margin-left: auto;
