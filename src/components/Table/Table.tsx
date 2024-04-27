@@ -71,6 +71,13 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
     });
 
     setCalculatedData(result as Array<calculatedDataType>)
+    if(mode === "edit"){
+      result.forEach(item =>{
+        formik.values[`row_${item.nsi_pers_indicate_id}`].id = item.f_pers_young_spec_line_id
+        formik.values[`row_${item.nsi_pers_indicate_id}`].target_count = item.target_count
+        formik.values[`row_${item.nsi_pers_indicate_id}`].distribution_count = item.distribution_count
+      })
+    }
   }
 
   useEffect(() => {
@@ -115,7 +122,7 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
                         </TableCell>
                         <TableCell>
                           <TextField value={
-                                      mode === "show" || mode === "edit"
+                                      mode === "show"
                                        ? row.target_count
                                        : formik.values[`row_${row.nsi_pers_indicate_id}`]["target_count"]
                                       }
@@ -124,11 +131,12 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
                                      size={"small"}
                                      disabled={mode === "show"}
                                      type={"number"}
+                                     required
                           />
                         </TableCell>
                         <TableCell>
                           <TextField  value={
-                                       mode === "show" || mode === "edit"
+                                       mode === "show"
                                          ? row.distribution_count
                                          : formik.values[`row_${row.nsi_pers_indicate_id}`]["distribution_count"]
                                      }
@@ -137,6 +145,7 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
                                      size={"small"}
                                      disabled={mode === "show"}
                                      type={"number"}
+                                     required
                           />
                         </TableCell>
                       </TableRow>

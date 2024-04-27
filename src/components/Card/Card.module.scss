@@ -5,8 +5,14 @@
     }
 
   }
-  .button {
+
+  .buttonsWrapper{
     display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .closeButton {
     margin-left: auto;
   }
 }

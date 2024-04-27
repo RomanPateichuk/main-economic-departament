@@ -15,8 +15,13 @@ export type FormValues = {
 type RowType = {
   distribution_count: number
   target_count: number
+  id: number
 }
 
 export type IndexedFormValuesType = FormValues & {
   [key: string]: any;
+};
+
+export type IndexedAccumulatorType = {
+  [key: string]: RowType | string | Dayjs | null | any;
 };
