@@ -13,8 +13,8 @@ import styles from "./Table.module.scss";
 import {useGetLinesDataQuery, useGetLinesQuery} from "../../redux";
 import {skipToken} from "@reduxjs/toolkit/query/react";
 import {Loader} from "../Loader/Loader.tsx";
-import {calculatedDataType, IndexedCalculatedDataType, PropType} from "./types.ts";
-import {ErrorMessage, FormikContextType, useFormikContext} from "formik";
+import {calculatedDataType, PropType} from "./types.ts";
+import {ErrorMessage, useFormikContext} from "formik";
 import {IndexedFormValuesType} from "../Card/types.ts";
 
 export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
@@ -22,7 +22,7 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
   const {data: linesData = [], isLoading: linesDataLoading} = useGetLinesDataQuery(mode === "create" && skipToken)
   const {data: lines = [], isLoading: linesLoading} = useGetLinesQuery()
 
-  const formik: FormikContextType<IndexedFormValuesType> = useFormikContext();
+  const formik = useFormikContext<IndexedFormValuesType>();
 
   const columns = [
     {id: 1, value: "Наименование показателя"},
@@ -65,15 +65,14 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
       return line;
     });
 
-
     setCalculatedData(result as Array<calculatedDataType>)
-    if(mode === "edit"){
+
       result.forEach(item =>{
         formik.values[`row_${item.nsi_pers_indicate_id}`].id = item.f_pers_young_spec_line_id
         formik.values[`row_${item.nsi_pers_indicate_id}`].target_count = item.target_count
         formik.values[`row_${item.nsi_pers_indicate_id}`].distribution_count = item.distribution_count
       })
-    }
+
   }
 
   useEffect(() => {
@@ -81,12 +80,22 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
   }, [linesDataLoading, linesLoading]);
 
 
-  const getTotal = (key: string, param: string = "") => {
-    if (param) {
-      return calculatedData.reduce((total: number, item: IndexedCalculatedDataType) => total + item[key] + item[param], 0);
-    } else {
-      return calculatedData.reduce((total: number, item: IndexedCalculatedDataType) => total + item[key], 0);
-    }
+  const getTotal = (params: "all" | "distribution" | "target") => {
+      const data = Object.entries(formik.values)
+      return data.reduce((total, [, value]) =>
+      {
+        if (typeof value === 'object' && 'distribution_count' in value && 'target_count' in value) {
+          if (params === "all") {
+            total += value.distribution_count + value.target_count;
+          } else if (params === "distribution") {
+            total += value.distribution_count;
+          } else if (params === "target") {
+            total += value.target_count;
+          }
+        }
+        return total
+
+      }, 0)
   };
 
   return <>
@@ -114,15 +123,11 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
                         </TableCell>
                         <TableCell sx={{fontSize: "1rem"}}>
                           {
-                            row.target_count + row.distribution_count
+                            formik.values[`row_${row.nsi_pers_indicate_id}`]["target_count"] + formik.values[`row_${row.nsi_pers_indicate_id}`]["distribution_count"]
                           }
                         </TableCell>
                         <TableCell>
-                          <TextField value={
-                                      mode === "show"
-                                       ? row.target_count
-                                       : formik.values[`row_${row.nsi_pers_indicate_id}`]["target_count"]
-                                      }
+                          <TextField value={formik.values[`row_${row.nsi_pers_indicate_id}`]["target_count"]}
                                      sx={{position: "relative"}}
                                      name={`row_${row.nsi_pers_indicate_id}.target_count`}
                                      onChange={formik.handleChange}
@@ -134,14 +139,10 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
                           <ErrorMessage className={styles.error} name={`row_${row.nsi_pers_indicate_id}.target_count`} component="div" />
                         </TableCell>
                         <TableCell>
-                          <TextField  value={
-                                       mode === "show"
-                                         ? row.distribution_count
-                                         : formik.values[`row_${row.nsi_pers_indicate_id}`]["distribution_count"]
-                                     }
+                          <TextField value={formik.values[`row_${row.nsi_pers_indicate_id}`]["distribution_count"]}
                                      sx={{position: "relative"}}
                                      name={`row_${row.nsi_pers_indicate_id}.distribution_count`}
-                                     onChange={formik.handleChange}
+                                      onChange={formik.handleChange}
                                      size={"small"}
                                      disabled={mode === "show"}
                                      type={"number"}
@@ -157,13 +158,13 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
                       Всего
                     </TableCell>
                     <TableCell sx={{fontSize: "1rem"}}>
-                      {calculatedData && getTotal("target_count", "distribution_count")}
+                      { getTotal("all")}
                     </TableCell>
                     <TableCell sx={{fontSize: "1rem"}}>
-                      {calculatedData && getTotal("target_count")}
+                      {getTotal("target")}
                     </TableCell>
                     <TableCell sx={{fontSize: "1rem"}}>
-                      {calculatedData && getTotal("distribution_count")}
+                      {getTotal("distribution")}
                     </TableCell>
                   </TableRow>
                 </TableBody>

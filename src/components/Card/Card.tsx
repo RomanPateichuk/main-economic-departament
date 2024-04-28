@@ -80,8 +80,8 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
           rep_end_period: String(values.rep_end_period?.format('YYYY-MM-DD')),
           insert_date: dayjs().toISOString(),
           insert_user: "roman",
-          update_date: '',
-          update_user: ''
+          update_date: dayjs().toISOString(),
+          update_user: 'roman'
         }
 
         await createCard(requestCardData).unwrap()
