@@ -12,7 +12,7 @@ import {
   useCreateCardMutation,
   useCreateTableRowMutation,
   useEditCardMutation,
-  useEditTableRowMutation, useGetHeaderDataQuery
+  useEditTableRowMutation
 } from "../../redux";
 import {IndexedAccumulatorType, IndexedFormValuesType} from "./types.ts";
 import {customizedYearCeilData} from "../../helpers/customizedDate.ts";
@@ -29,7 +29,16 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
   const [createTableRow] = useCreateTableRowMutation()
   const [editCard] = useEditCardMutation()
   const [editTableRow] = useEditTableRowMutation()
-  const {data = [], isLoading} = useGetHeaderDataQuery();
+
+  const rowSchema = yup.object().shape({
+    distribution_count: yup.number()
+      .required('Это обязательное поле')
+      .min(0, 'Не может быть отрицательным'),
+    target_count: yup.number()
+      .required('Это обязательное поле')
+      .min(0, 'Не может быть отрицательным'),
+  });
+
   const validationSchema = yup.object({
     org_employee: yup
       .string()
@@ -37,8 +46,14 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
     rep_beg_period: yup
       .date().required('Выберите начало периода'),
     rep_end_period: yup
-      .date().required('Выберите конец периода')
+      .date().required('Выберите конец периода'),
+    row_1: rowSchema,
+    row_2: rowSchema,
+    row_3: rowSchema,
+    row_4: rowSchema,
+    row_5: rowSchema,
   });
+
 
   const formik = useFormik<IndexedFormValuesType>({
     initialValues: {
@@ -65,8 +80,8 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
           rep_end_period: String(values.rep_end_period?.format('YYYY-MM-DD')),
           insert_date: dayjs().toISOString(),
           insert_user: "roman",
-          update_date: dayjs().toISOString(),
-          update_user: 'roman'
+          update_date: '',
+          update_user: ''
         }
 
         await createCard(requestCardData).unwrap()
@@ -83,8 +98,8 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
               return {
                 nsi_pers_indicate_id: index + 1,
                 f_pers_young_spec_id: navigateData.id,
-                update_date: "2024-04-25T16:24:36.910Z",
-                update_user: "string",
+                update_date: "",
+                update_user: "",
                 target_count: value.target_count,
                 distribution_count: value.distribution_count,
               }
@@ -118,10 +133,9 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
         const changedValues = Object.keys(values).reduce((acc: IndexedAccumulatorType, key) => {
           const regex = /^(row|rep)/
           if (key === "org_employee" && values[key] !== formik.initialValues[key]) {
-              acc[key] = values[key];
-          }
-          else if(regex.test(key)){
-            if(JSON.stringify(values[key]) !== JSON.stringify(formik.initialValues[key])){
+            acc[key] = values[key];
+          } else if (regex.test(key)) {
+            if (JSON.stringify(values[key]) !== JSON.stringify(formik.initialValues[key])) {
               acc[key] = values[key]
             }
 
@@ -129,19 +143,14 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
           return acc;
         }, {});
 
-
-        // нужна id карточки(из урла) и id строки данных таблицы(из ключа)
-
-        // деструктуризировать объект значений
         const {org_employee, rep_beg_period, rep_end_period, ...rows} = changedValues
 
-        if(!(Object.keys(rows).length === 0)){
-          for(const key of Object.keys(rows)){
+        if (!(Object.keys(rows).length === 0)) {
+          for (const key of Object.keys(rows)) {
             const f_pers_young_spec_line_id = rows[key].id
-            console.log(f_pers_young_spec_line_id)
             const requestTableRowEditData = {
-              f_pers_young_spec_line_id: rows[key].id,
-              requestTableRowEditData: {
+                f_pers_young_spec_line_id: rows[key].id,
+                requestTableRowEditData: {
                 target_count: rows[key].target_count,
                 distribution_count: rows[key].distribution_count,
                 update_date: dayjs().toISOString(),
@@ -149,7 +158,6 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
               }
             }
 
-            console.log(requestTableRowEditData)
             await editTableRow(requestTableRowEditData).unwrap()
               .then(() => {
               })
@@ -157,19 +165,20 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
                 alert(`Что-то пошло не так! Данные строки ${f_pers_young_spec_line_id} не сохранились. Попробуйте еще раз`)
               })
           }
-
-
-
         }
 
-        if(org_employee || rep_beg_period || rep_end_period){
-          const headerData =Object.fromEntries(Object.entries({org_employee, rep_beg_period, rep_end_period}).filter(([, value]) => value !== undefined))
+        if (org_employee || rep_beg_period || rep_end_period) {
+          const headerData = Object.fromEntries(Object.entries({
+            org_employee,
+            rep_beg_period,
+            rep_end_period
+          }).filter(([, value]) => value !== undefined))
 
-          if(headerData.rep_beg_period){
+          if (headerData.rep_beg_period) {
             headerData.rep_beg_period = String(headerData.rep_beg_period?.format('YYYY-MM-DD'))
           }
 
-          if(headerData.rep_end_period){
+          if (headerData.rep_end_period) {
             headerData.rep_end_period = String(headerData.rep_end_period?.format('YYYY-MM-DD'))
           }
 
@@ -182,13 +191,13 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
             },
           }
 
-         await editCard(requestEditCardData).unwrap()
-           .then(()=>{
+          await editCard(requestEditCardData).unwrap()
+            .then(() => {
               alert("Данные успешно изменены")
-           })
-           .catch(()=>{
-             alert("Что-то пошло не так. Попробуйте еще раз")
-           })
+            })
+            .catch(() => {
+              alert("Что-то пошло не так. Попробуйте еще раз")
+            })
         }
       }
     },
@@ -201,19 +210,21 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
         <Table mode={mode} locationState={location.state}/>
         <div className={styles.buttonsWrapper}>
           <Button className={styles.closeButton}
-                  onClick={()=>{navigate("/")}}
+                  onClick={() => {
+                    navigate("/")
+                  }}
                   color="primary"
                   variant="outlined">
-          {"Закрыть"}
+            {"Закрыть"}
           </Button>
 
           {mode !== "show" &&
-          <Button className={styles.actionButton}
-                  color="primary"
-                  variant="outlined"
-                  type={"submit"}>
-          {mode === "create" ? "создать" : "редактировать"}
-          </Button>
+              <Button className={styles.actionButton}
+                      color="primary"
+                      variant="outlined"
+                      type={"submit"}>
+                {mode === "create" ? "создать" : "редактировать"}
+              </Button>
           }
 
         </div>

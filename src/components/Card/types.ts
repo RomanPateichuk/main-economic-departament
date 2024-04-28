@@ -1,4 +1,4 @@
-import {Dayjs} from "dayjs";
+import {Dayjs} from "dayjs"
 
 export type FormValues = {
   row_1: RowType,
@@ -6,10 +6,9 @@ export type FormValues = {
   row_3: RowType,
   row_4: RowType,
   row_5: RowType,
-  org_employee:  string
-  rep_beg_period: null | Dayjs
+  org_employee:  string,
+  rep_beg_period: null | Dayjs,
   rep_end_period: null | Dayjs
-
 };
 
 type RowType = {
@@ -19,9 +18,9 @@ type RowType = {
 }
 
 export type IndexedFormValuesType = FormValues & {
-  [key: string]: any;
-};
+  [key: string]: any
+}
 
 export type IndexedAccumulatorType = {
-  [key: string]: RowType | string | Dayjs | null | any;
-};
+  [key: string]: any
+}

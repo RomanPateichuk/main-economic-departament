@@ -7,14 +7,14 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField
+  TextField,
 } from "@mui/material";
 import styles from "./Table.module.scss";
 import {useGetLinesDataQuery, useGetLinesQuery} from "../../redux";
 import {skipToken} from "@reduxjs/toolkit/query/react";
 import {Loader} from "../Loader/Loader.tsx";
 import {calculatedDataType, IndexedCalculatedDataType, PropType} from "./types.ts";
-import {FormikContextType, useFormikContext} from "formik";
+import {ErrorMessage, FormikContextType, useFormikContext} from "formik";
 import {IndexedFormValuesType} from "../Card/types.ts";
 
 export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
@@ -103,6 +103,7 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
                       columns.map(column => <TableCell key={column.id}>{column.value}</TableCell>)
                     }
                   </TableRow>
+
                 </TableHead>
                 <TableBody>
                   {
@@ -126,13 +127,15 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
                                        ? row.target_count
                                        : formik.values[`row_${row.nsi_pers_indicate_id}`]["target_count"]
                                       }
+                                     sx={{position: "relative"}}
                                      name={`row_${row.nsi_pers_indicate_id}.target_count`}
                                      onChange={formik.handleChange}
                                      size={"small"}
                                      disabled={mode === "show"}
                                      type={"number"}
-                                     required
+                                     error={Boolean(formik.errors[`row_${row.nsi_pers_indicate_id}`]?.target_count)}
                           />
+                          <ErrorMessage className={styles.error} name={`row_${row.nsi_pers_indicate_id}.target_count`} component="div" />
                         </TableCell>
                         <TableCell>
                           <TextField  value={
@@ -140,13 +143,15 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
                                          ? row.distribution_count
                                          : formik.values[`row_${row.nsi_pers_indicate_id}`]["distribution_count"]
                                      }
+                                     sx={{position: "relative"}}
                                      name={`row_${row.nsi_pers_indicate_id}.distribution_count`}
                                      onChange={formik.handleChange}
                                      size={"small"}
                                      disabled={mode === "show"}
                                      type={"number"}
-                                     required
+                                     error={Boolean(formik.errors[`row_${row.nsi_pers_indicate_id}`]?.distribution_count)}
                           />
+                          <ErrorMessage className={styles.error} name={`row_${row.nsi_pers_indicate_id}.distribution_count`} component="div" />
                         </TableCell>
                       </TableRow>
                     })

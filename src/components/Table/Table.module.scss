@@ -2,6 +2,13 @@
     margin: 2rem 0;
   }
 
+  .error{
+    position: absolute;
+    width: 20%;
+    color: #d32f2f;
+    font-size: .75rem;
+  }
+
   input {
     &:disabled {
       -webkit-text-fill-color: #000000;

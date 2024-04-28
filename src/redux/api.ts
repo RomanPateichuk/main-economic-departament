@@ -11,12 +11,21 @@ import {
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({baseUrl: 'https://olegegoism.pythonanywhere.com/'}),
+  tagTypes: ["HeaderData", "LinesData", "Lines"],
   endpoints: (build) => ({
     getHeaderData: build.query<Array<HeaderDataType>, void>({
       query: () => `/f_pers_young_spec`,
+      providesTags: (result) =>
+        result
+          ? [...result.map(({ f_pers_young_spec_id }) => ({ type: "HeaderData" as const, f_pers_young_spec_id })), "HeaderData"]
+          : ["HeaderData"],
     }),
     getLinesData: build.query<Array<LinesDataType>, boolean>({
       query: () => `/f_pers_young_spec_line`,
+      providesTags: (result) =>
+        result
+          ? [...result.map(({ f_pers_young_spec_line_id }) => ({ type: "LinesData" as const, f_pers_young_spec_line_id })), "LinesData"]
+          : ["LinesData"],
     }),
     getLines: build.query<Array<LinesType>, void>({
       query: () => `/nsi_pers_young_spec`,
@@ -41,6 +50,7 @@ export const api = createApi({
         method: 'PATCH',
         body: requestTableRowEditData,
       }),
+      invalidatesTags: ["LinesData"]
     }),
     editCard: build.mutation<requestCardEditDataType, {f_pers_young_spec_id: number, requestEditCardData: requestCardEditDataType}>({
       query: ({f_pers_young_spec_id, requestEditCardData} ) => ({
@@ -48,6 +58,7 @@ export const api = createApi({
         method: 'PATCH',
         body: requestEditCardData,
       }),
+      invalidatesTags: ["HeaderData"]
     }),
   })
 });
