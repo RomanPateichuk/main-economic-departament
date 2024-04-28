@@ -98,8 +98,8 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
               return {
                 nsi_pers_indicate_id: index + 1,
                 f_pers_young_spec_id: navigateData.id,
-                update_date: "",
-                update_user: "",
+                update_date: dayjs().toISOString(),
+                update_user: "roman",
                 target_count: value.target_count,
                 distribution_count: value.distribution_count,
               }
@@ -158,12 +158,34 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
               }
             }
 
-            await editTableRow(requestTableRowEditData).unwrap()
-              .then(() => {
-              })
-              .catch(() => {
-                alert(`Что-то пошло не так! Данные строки ${f_pers_young_spec_line_id} не сохранились. Попробуйте еще раз`)
-              })
+
+            if(f_pers_young_spec_line_id === "")
+            {
+              const requestTableData =  {
+                  nsi_pers_indicate_id: parseInt(key.replace("row_", ""), 10),
+                  f_pers_young_spec_id: Number(id),
+                  update_date: dayjs().toISOString(),
+                  update_user: "roman",
+                  target_count: rows[key].target_count,
+                  distribution_count: rows[key].distribution_count,
+                }
+
+                await createTableRow(requestTableData).unwrap()
+                  .then(() => {
+
+                  })
+                  .catch(() => {
+                    alert(`Что-то пошло не так! Данные строки ${requestTableData.nsi_pers_indicate_id} не сохранились. Попробуйте еще раз`)
+                  })
+            }
+            else{
+              await editTableRow(requestTableRowEditData).unwrap()
+                .then(() => {
+                })
+                .catch(() => {
+                  alert(`Что-то пошло не так! Данные строки ${f_pers_young_spec_line_id} не сохранились. Попробуйте еще раз`)
+                })
+            }
           }
         }
 

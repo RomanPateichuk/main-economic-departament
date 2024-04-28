@@ -33,10 +33,11 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
 
   const findCellData = (id: number) => {
     const findData = linesData.filter((item) => item.f_pers_young_spec_id === id)
+
     const rowData = findData.map((data) => {
       const id = data.nsi_pers_indicate_id
       const result = lines.find(field => field.nsi_pers_young_spec_id === id)
-      return {...data, ...result}
+      return {...data,...result}
     })
 
     const uniqueNames: Record<string, typeof rowData[0]> = {}
@@ -49,26 +50,21 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
     });
     const filteredData = Object.values(uniqueNames);
 
-    const result = Object.entries(lines).map(([, value]) => {
+    const result = Object.entries(lines).map(([, value ], index) => {
       const line = filteredData.find(obj => obj.name === value.name);
-
       if (!line) {
         return {
-          "actual_date": "",
-          "distribution_count": 0,
-          "f_pers_young_spec_id": filteredData[0]?.f_pers_young_spec_id,
-          "name": value.name,
-          "nsi_pers_indicate_id": value?.nsi_pers_young_spec_id,
-          "nsi_pers_young_spec_id": 3,
-          "range": value.range,
-          "target_count": 0,
-          "update_date": "",
-          "update_user": "",
-          f_pers_young_spec_line_id: Date.now() + value.range,
+          distribution_count: 0,
+          target_count: 0,
+          f_pers_young_spec_id: "",
+          name: value.name,
+          nsi_pers_indicate_id: index+1,
+          f_pers_young_spec_line_id: "",
         };
       }
       return line;
     });
+
 
     setCalculatedData(result as Array<calculatedDataType>)
     if(mode === "edit"){
@@ -109,7 +105,7 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
                   {
                     calculatedData.map(row => {
                       return <TableRow
-                        key={row.f_pers_young_spec_line_id}
+                        key={row.nsi_pers_indicate_id}
                       >
                         <TableCell>
                           {
