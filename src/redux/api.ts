@@ -43,6 +43,7 @@ export const api = createApi({
         method: 'POST',
         body: requestTableRowPostData,
       }),
+      invalidatesTags: ["LinesData"]
     }),
     editTableRow: build.mutation<requestTableRowEditDataType, {f_pers_young_spec_line_id: number, requestTableRowEditData: requestTableRowEditDataType}>({
       query: ({f_pers_young_spec_line_id, requestTableRowEditData} ) => ({

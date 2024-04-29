@@ -7,8 +7,8 @@ export type FormValues = {
   row_4: RowType,
   row_5: RowType,
   org_employee:  string,
-  rep_beg_period: null | Dayjs,
-  rep_end_period: null | Dayjs
+  rep_beg_period: string | Dayjs,
+  rep_end_period: string | Dayjs
 };
 
 type RowType = {

@@ -1,10 +1,10 @@
 import 'dayjs/locale/ru';
-import React from "react"
+import React, {useEffect, useState} from "react"
 import {useLocation, useNavigate, useParams} from "react-router-dom"
-import {Header} from "../Header";
+import {Header} from "../Header"
 import {Table} from "../Table"
-import {Button} from "@mui/material";
-import {FormikProvider, useFormik} from "formik";
+import {Alert, Button, Snackbar} from "@mui/material";
+import {FormikProvider, useFormik} from "formik"
 import dayjs from "dayjs";
 import * as yup from "yup";
 import styles from "./Card.module.scss";
@@ -14,8 +14,10 @@ import {
   useEditCardMutation,
   useEditTableRowMutation
 } from "../../redux";
-import {IndexedAccumulatorType, IndexedFormValuesType} from "./types.ts";
-import {customizedYearCeilData} from "../../helpers/customizedDate.ts";
+import {IndexedAccumulatorType, IndexedFormValuesType} from "./types.ts"
+import {customizedYearCeilData} from "../../helpers/customizedDate.ts"
+import {LoadingButton} from "@mui/lab";
+import SaveIcon from '@mui/icons-material/Save';
 
 type PropType = {
   mode?: 'show' | 'create' | 'edit',
@@ -25,10 +27,29 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
   const location = useLocation()
   const {id} = useParams()
   const navigate = useNavigate()
-  const [createCard] = useCreateCardMutation()
-  const [createTableRow] = useCreateTableRowMutation()
-  const [editCard] = useEditCardMutation()
-  const [editTableRow] = useEditTableRowMutation()
+  const [createCard, {isLoading: createCardLoading}] = useCreateCardMutation()
+  const [createTableRow, {isLoading: createTableRowLoading}] = useCreateTableRowMutation()
+  const [editCard, {isLoading: editCardLoading}] = useEditCardMutation()
+  const [editTableRow, {isLoading: editTableRowLoading}] = useEditTableRowMutation()
+
+  const [showErrorSnackBar, setShowErrorSnackBar] = useState(false)
+  const [showSuccessSnackBar, setShowSuccessSnackBar] = useState(false)
+  const [status, setStatus] = useState<"success" | "error" | "">("")
+
+
+  useEffect(() => {
+     if(status === "success"){
+       setShowSuccessSnackBar(true);
+       setTimeout(() => setShowSuccessSnackBar(false), 3000);
+     }
+     else if(status === "error"){
+       setShowErrorSnackBar(true);
+       setTimeout(() => setShowErrorSnackBar(false), 3000);
+     }
+
+
+  }, [status]);
+
 
   const rowSchema = yup.object().shape({
     distribution_count: yup.number()
@@ -63,11 +84,12 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
       row_4: {distribution_count: 0, target_count: 0, id: 0},
       row_5: {distribution_count: 0, target_count: 0, id: 0},
       org_employee: location.state?.org_employee || "",
-      rep_beg_period: mode === 'create' ? null : dayjs(location.state.rep_beg_period),
-      rep_end_period: mode === 'create' ? null : dayjs(location.state.rep_end_period),
+      rep_beg_period: mode === 'create' ? "" : dayjs(location.state.rep_beg_period),
+      rep_end_period: mode === 'create' ? "" : dayjs(location.state.rep_end_period),
     },
     validationSchema: validationSchema,
     onSubmit: async (values) => {
+      setStatus("")
       const {org_employee, rep_beg_period, rep_end_period, ...rows} = values
 
       const headerData = {org_employee, rep_beg_period, rep_end_period}
@@ -76,8 +98,8 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
       if (mode === "create") {
         const requestCardData = {
           ...headerData,
-          rep_beg_period: String(values.rep_beg_period?.format('YYYY-MM-DD')),
-          rep_end_period: String(values.rep_end_period?.format('YYYY-MM-DD')),
+          rep_beg_period: dayjs.isDayjs(values.rep_beg_period) ? String(values.rep_beg_period?.format('YYYY-MM-DD')) : values.rep_beg_period,
+          rep_end_period: dayjs.isDayjs(values.rep_end_period) ? String(values.rep_end_period?.format('YYYY-MM-DD')) : values.rep_beg_period,
           insert_date: dayjs().toISOString(),
           insert_user: "roman",
           update_date: dayjs().toISOString(),
@@ -105,26 +127,22 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
               }
             }).filter(value => value.target_count !== 0 || value.distribution_count !== 0)
 
-            let hasError = false
+            //let hasError = false
 
             for (const tableRow of requestTableData) {
               await createTableRow(tableRow).unwrap()
                 .then(() => {
-
+                  return navigate(`/card/${navigateData.id}`, {state: navigateData})
                 })
                 .catch(() => {
-                  hasError = true
-                  alert(`Что-то пошло не так! Данные строки ${tableRow.nsi_pers_indicate_id} не сохранились. Попробуйте еще раз`)
+                   setStatus("error")
+                   console.error(`Что-то пошло не так! Данные строки ${tableRow.nsi_pers_indicate_id} не сохранились. Попробуйте еще раз`)
                 })
             }
 
-            if (!hasError) {
-              alert("Данные сохранились")
-              return navigate(`/card/${navigateData.id}`, {state: navigateData})
-            }
-
-          }).catch(() => {
-            alert('Что-то пошло не так! Данные шапки таблицы не сохранились. Попробуйте еще раз')
+          }).catch((e) => {
+            setStatus("error")
+            console.error(e.status)
           })
 
 
@@ -149,8 +167,8 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
           for (const key of Object.keys(rows)) {
             const f_pers_young_spec_line_id = rows[key].id
             const requestTableRowEditData = {
-                f_pers_young_spec_line_id: rows[key].id,
-                requestTableRowEditData: {
+              f_pers_young_spec_line_id: rows[key].id,
+              requestTableRowEditData: {
                 target_count: rows[key].target_count,
                 distribution_count: rows[key].distribution_count,
                 update_date: dayjs().toISOString(),
@@ -159,32 +177,35 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
             }
 
 
-            if(f_pers_young_spec_line_id === "")
-            {
-              const requestTableData =  {
-                  nsi_pers_indicate_id: parseInt(key.replace("row_", ""), 10),
-                  f_pers_young_spec_id: Number(id),
-                  update_date: dayjs().toISOString(),
-                  update_user: "roman",
-                  target_count: rows[key].target_count,
-                  distribution_count: rows[key].distribution_count,
-                }
+            if (f_pers_young_spec_line_id === "") {
+              const requestTableData = {
+                nsi_pers_indicate_id: parseInt(key.replace("row_", ""), 10),
+                f_pers_young_spec_id: Number(id),
+                update_date: dayjs().toISOString(),
+                update_user: "roman",
+                target_count: rows[key].target_count,
+                distribution_count: rows[key].distribution_count,
+              }
 
-                await createTableRow(requestTableData).unwrap()
-                  .then(() => {
-
-                  })
-                  .catch(() => {
-                    alert(`Что-то пошло не так! Данные строки ${requestTableData.nsi_pers_indicate_id} не сохранились. Попробуйте еще раз`)
-                  })
-            }
-            else{
+              await createTableRow(requestTableData).unwrap()
+                .then(()=>{
+                  setStatus("success")
+                })
+                .catch((e) => {
+                  setStatus("error")
+                  console.error(e.status)
+                })
+            } else {
               await editTableRow(requestTableRowEditData).unwrap()
-                .then(() => {
+                .then(()=>{
+                  setStatus( "success")
                 })
                 .catch(() => {
-                  alert(`Что-то пошло не так! Данные строки ${f_pers_young_spec_line_id} не сохранились. Попробуйте еще раз`)
+                  setStatus("error")
+                  console.error(`Что-то пошло не так! Данные строки ${f_pers_young_spec_line_id} не сохранились. Попробуйте еще раз`)
                 })
+
+
             }
           }
         }
@@ -215,17 +236,18 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
 
           await editCard(requestEditCardData).unwrap()
             .then(() => {
-              alert("Данные успешно изменены")
+              setStatus("success")
             })
-            .catch(() => {
-              alert("Что-то пошло не так. Попробуйте еще раз")
+            .catch((e) => {
+              setStatus("error")
+              console.error(e.status)
             })
         }
       }
     },
   });
 
-  return (
+  return <>
     <FormikProvider value={formik}>
       <form className={styles.form} onSubmit={formik.handleSubmit}>
         <Header mode={mode} year={location?.state?.year}/>
@@ -241,16 +263,29 @@ export const Card: React.FC<PropType> = React.memo(({mode = 'show'}) => {
           </Button>
 
           {mode !== "show" &&
-              <Button className={styles.actionButton}
-                      color="primary"
-                      variant="outlined"
-                      type={"submit"}>
+              <LoadingButton
+                  type={"submit"}
+                  loading={createCardLoading || createTableRowLoading || editCardLoading || editTableRowLoading}
+                  loadingPosition="start"
+                  startIcon={<SaveIcon/>}
+                  variant="outlined"
+              >
                 {mode === "create" ? "создать" : "редактировать"}
-              </Button>
+              </LoadingButton>
           }
-
         </div>
       </form>
     </FormikProvider>
-  )
+    <Snackbar open={showErrorSnackBar} autoHideDuration={3000}>
+      <Alert severity="error">
+        Что-то пошло не так. Попробуйте еще раз
+      </Alert>
+    </Snackbar>
+    <Snackbar open={showSuccessSnackBar} autoHideDuration={3000}>
+      <Alert severity="success">
+        Данные успешно сохранены
+      </Alert>
+    </Snackbar>
+
+  </>
 })
