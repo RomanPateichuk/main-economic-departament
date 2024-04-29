@@ -21,6 +21,13 @@ export type IndexedFormValuesType = FormValues & {
   [key: string]: any
 }
 
+export type IndexedFormErrorsType = {
+  [key: string]: {
+    distribution_count: string;
+    target_count: string;
+  };
+}
+
 export type IndexedAccumulatorType = {
   [key: string]: any
 }

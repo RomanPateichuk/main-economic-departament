@@ -15,8 +15,8 @@ import {useGetLinesDataQuery, useGetLinesQuery} from "../../redux";
 import {skipToken} from "@reduxjs/toolkit/query/react";
 import {Loader} from "../Loader/Loader.tsx";
 import {calculatedDataType, PropType} from "./types.ts";
-import {ErrorMessage, useFormikContext} from "formik";
-import {IndexedFormValuesType} from "../Card/types.ts";
+import {ErrorMessage, FormikErrors, useFormikContext} from "formik";
+import {IndexedFormErrorsType, IndexedFormValuesType} from "../Card/types.ts";
 
 export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
   const [calculatedData, setCalculatedData] = useState<Array<calculatedDataType> | []>([])
@@ -25,6 +25,7 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
   const {data: lines = [], isLoading: linesLoading, isError: linesError} = useGetLinesQuery()
 
   const formik = useFormikContext<IndexedFormValuesType>();
+  const errors: FormikErrors<IndexedFormErrorsType> = formik.errors;
 
   const columns = [
     {id: 1, value: "Наименование показателя"},
@@ -142,7 +143,7 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
                                size={"small"}
                                disabled={mode === "show"}
                                type={"number"}
-                               error={Boolean(formik.errors[`row_${row.nsi_pers_indicate_id}`]?.target_count)}
+                               error={Boolean(errors[`row_${row.nsi_pers_indicate_id}`]?.target_count)}
                     />
                     <ErrorMessage className={styles.error} name={`row_${row.nsi_pers_indicate_id}.target_count`}
                                   component="div"/>
@@ -155,7 +156,7 @@ export const CustomTable: React.FC<PropType> = ({mode, locationState}) => {
                                size={"small"}
                                disabled={mode === "show"}
                                type={"number"}
-                               error={Boolean(formik.errors[`row_${row.nsi_pers_indicate_id}`]?.distribution_count)}
+                               error={Boolean(errors[`row_${row.nsi_pers_indicate_id}`]?.distribution_count)}
                     />
                     <ErrorMessage className={styles.error} name={`row_${row.nsi_pers_indicate_id}.distribution_count`}
                                   component="div"/>
